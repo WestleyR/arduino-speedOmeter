@@ -3,7 +3,7 @@
 // Date: Sep 22, 2019
 // Repo: https://github.com/WestleyR/arduino-speedOmeter
 //
-// Version: 1.0.0-beta-3
+// Version: 1.0.0-beta-4
 //
 // License: The Clear BSD License
 //
@@ -21,14 +21,18 @@
 
 // The output pins to the BCD decoder, in high to low.
 // BCD_A_OUTPUT = first 7-segment display,
-// BCD_B_OUTPUT = second 7-segment display.
+// BCD_B_OUTPUT = second 7-segment display,
+// BCD_C_OUTPUT = last 7-segment display.
 //  _   _   _
 // |_| |_| |_|
-// |_| |_| |_|
+// |_| |_|.|_|
 //  A   B   C
 //
-int BCD_A_OUTPUT[] = {13, 12, 11, 10};
-int BCD_B_OUTPUT[] = {9, 8, 7, 6};
+// NOTE: The "dot" is always on.
+//
+int BCD_B_OUTPUT[] = {13, 12, 11, 10};
+int BCD_C_OUTPUT[] = {9, 8, 7, 6};
+int BCD_A_OUTPUT[] = {5, 4, 3, 2};
 
 // writeBcdAOutput will take a array, and
 // write it to the output pins for A.
@@ -43,6 +47,14 @@ void writeBcdAOutput(int out[]) {
 void writeBcdBOutput(int out[]) {
   for (int i = 0; i < 4; i++) {
     digitalWrite(BCD_B_OUTPUT[i], out[i]);
+  }
+}
+
+// writeBcdAOutput will take a array, and
+// write it to the output pins for C.
+void writeBcdCOutput(int out[]) {
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(BCD_C_OUTPUT[i], out[i]);
   }
 }
 
@@ -78,6 +90,14 @@ void writeBOutput(int num) {
   writeBcdBOutput(outputArr);
 }
 
+// writeAOutput will write to display C.
+void writeCOutput(int num) {
+  int outputArr[] = {0, 0, 0, 0};
+
+  getBcdArray(outputArr, num);
+  writeBcdCOutput(outputArr);
+}
+
 // splitInt will take a num, and split it into
 // a array, but reversed. eg, 23 => [ 3 2 ].
 void splitInt(int arr[], int num) {
@@ -93,18 +113,11 @@ void splitInt(int arr[], int num) {
 // writeAllOutput will take a num, and write
 // it to all displays.
 void writeAllOutput(int num) {
-  if (num > 9) {
-    int arr[2];
-    splitInt(arr, num);
-    writeBOutput(arr[0]);
-    writeAOutput(arr[1]);
-  } else {
-    // num is less then 10, we can just use
-    // the last digit to print it.
-    writeBOutput(num);
-    // Make sure the other diplays(s) are 0.
-    writeAOutput(0);
-  }
+  int arr[] = {0, 0, 0};
+  splitInt(arr, num);
+  writeAOutput(arr[2]);
+  writeBOutput(arr[1]);
+  writeCOutput(arr[0]);
 }
 
 void setup() {
@@ -112,13 +125,14 @@ void setup() {
   for (int i = 0; i < 4; i++) {
     pinMode(BCD_A_OUTPUT[i], OUTPUT);
     pinMode(BCD_B_OUTPUT[i], OUTPUT);
+    pinMode(BCD_C_OUTPUT[i], OUTPUT);
   }
 }
 
 void loop() {
   // As a test, write 0-9
-  for (int i = 0; i < 99; i++) {
+  for (int i = 0; i < 999; i++) {
     writeAllOutput(i);
-    delay(100);
+    delay(75);
   }
 }
