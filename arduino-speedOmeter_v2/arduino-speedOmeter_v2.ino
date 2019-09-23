@@ -3,7 +3,7 @@
 // Date: Sep 22, 2019
 // Repo: https://github.com/WestleyR/arduino-speedOmeter
 //
-// Version: 1.0.0-beta-1
+// Version: 1.0.0-beta-2
 //
 // License: The Clear BSD License
 //
@@ -18,6 +18,8 @@
 // displays.
 //
 
+// The pulse input.
+#define SPEED_IN 14
 
 // The output pins to the BCD decoder, in high to low.
 // BCD_A_OUTPUT = first 7-segment display,
@@ -33,6 +35,16 @@
 int BCD_B_OUTPUT[] = {13, 12, 11, 10};
 int BCD_C_OUTPUT[] = {9, 8, 7, 6};
 int BCD_A_OUTPUT[] = {5, 4, 3, 2};
+
+// A couple of timer vars.
+bool rset = false;
+bool waitPulse = false;
+unsigned long start;
+
+// This is the magic number, its the miles/per wheel
+// rotation (per/input pulse). Needs to be adgusted
+// as needed for your wheel size.
+const float milesPerPulse = 0.010189394;
 
 // writeBcdAOutput will take a array, and
 // write it to the output pins for A.
@@ -63,9 +75,9 @@ void writeBcdCOutput(int out[]) {
 void getBcdArray(int ret[], int num) {
   int rindex = 0;
   for (int c = 3; c >= 0; c--) {
-    int k = num >> c;
+    int b = num >> c;
 
-    if (k & 1) {
+    if (b & 1) {
       ret[rindex] = 1;
     } else {
       ret[rindex] = 0;
@@ -127,12 +139,43 @@ void setup() {
     pinMode(BCD_B_OUTPUT[i], OUTPUT);
     pinMode(BCD_C_OUTPUT[i], OUTPUT);
   }
+  pinMode(SPEED_IN, INPUT_PULLUP);
+}
+
+void calcSpeed(float timePulse) {
+  float currentSpeed = milesPerPulse / timePulse * 36000;
+  writeAllOutput((int)currentSpeed);
 }
 
 void loop() {
-  // As a test, write 0-999
-  for (int i = 0; i < 1000; i++) {
-    writeAllOutput(i);
-    delay(100);
+  // Only reset the timer if needed.
+  if (!rset) {
+    start = millis();
+    rset = true;
+  }
+
+  if (!waitPulse) {
+    if (!digitalRead(SPEED_IN)) {
+      unsigned long timeEnd = millis();
+      long totalTime = timeEnd - start;
+      calcSpeed(totalTime);
+      rset = false;
+      delay(10);
+      waitPulse = true;
+    }
+  }
+  // Wait for the input to be high agin,
+  // otherwise, the display will update 
+  // before the pulse has a chanse to open
+  // (HIGH).
+  if (digitalRead(SPEED_IN)) {
+    waitPulse = false;
+  }
+
+  // If theres no activity after 2 seconds, then
+  // clear the display.
+  if ((millis() - start) >= 2000) {
+    rset = false;
+    writeAllOutput(0);
   }
 }
