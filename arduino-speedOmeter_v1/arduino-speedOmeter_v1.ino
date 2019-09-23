@@ -3,7 +3,7 @@
 // Date: Sep 22, 2019
 // Repo: https://github.com/WestleyR/arduino-speedOmeter
 //
-// Version: 1.0.0-beta-4
+// Version: 1.0.1
 //
 // License: The Clear BSD License
 //
@@ -13,7 +13,10 @@
 // This software is licensed under a Clear BSD License.
 //
 //
-// This project is designed to take a input pulse (like from a spinning wheel)
+// This is just a test program to test all 3 7-segment LED displays are working,
+// it just counts from 0-999 and prints it to the 3 displays.
+//
+// The full project is designed to take a input pulse (like from a spinning wheel)
 // and convert those pulses to MPH, and display it on 2 (or 3) 7-segment LED
 // displays.
 //
@@ -42,7 +45,7 @@ void writeBcdAOutput(int out[]) {
   }
 }
 
-// writeBcdAOutput will take a array, and
+// writeBcdBOutput will take a array, and
 // write it to the output pins for B.
 void writeBcdBOutput(int out[]) {
   for (int i = 0; i < 4; i++) {
@@ -50,7 +53,7 @@ void writeBcdBOutput(int out[]) {
   }
 }
 
-// writeBcdAOutput will take a array, and
+// writeBcdCOutput will take a array, and
 // write it to the output pins for C.
 void writeBcdCOutput(int out[]) {
   for (int i = 0; i < 4; i++) {
@@ -58,8 +61,8 @@ void writeBcdCOutput(int out[]) {
   }
 }
 
-// This converts a int, to a BCD array. Eg,
-// 3 => [ 0 0 1 1 ].
+// This converts a int (num), to a BCD array. Eg,
+// 3 => [ 0 0 1 1 ], 5 => [ 0 1 0 1 ].
 void getBcdArray(int ret[], int num) {
   int rindex = 0;
   for (int c = 3; c >= 0; c--) {
@@ -130,9 +133,9 @@ void setup() {
 }
 
 void loop() {
-  // As a test, write 0-9
-  for (int i = 0; i < 999; i++) {
+  // As a test, write 0-999
+  for (int i = 0; i < 1000; i++) {
     writeAllOutput(i);
-    delay(75);
+    delay(100);
   }
 }
