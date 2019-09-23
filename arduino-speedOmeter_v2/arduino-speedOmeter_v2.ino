@@ -3,7 +3,7 @@
 // Date: Sep 22, 2019
 // Repo: https://github.com/WestleyR/arduino-speedOmeter
 //
-// Version: 1.0.0-beta-2
+// Version: 1.0.0-beta-3
 //
 // License: The Clear BSD License
 //
@@ -31,7 +31,9 @@
 //  A   B   C
 //
 // NOTE: The "dot" is always on.
-//
+// NOTE: The pins need to be from high
+// to low, or revers the pin order to your
+// BCD decoders.
 int BCD_B_OUTPUT[] = {13, 12, 11, 10};
 int BCD_C_OUTPUT[] = {9, 8, 7, 6};
 int BCD_A_OUTPUT[] = {5, 4, 3, 2};
@@ -44,7 +46,7 @@ unsigned long start;
 // This is the magic number, its the miles/per wheel
 // rotation (per/input pulse). Needs to be adgusted
 // as needed for your wheel size.
-const float milesPerPulse = 0.010189394;
+const float milesPerPulse = 0.050189394;
 
 // writeBcdAOutput will take a array, and
 // write it to the output pins for A.
@@ -160,12 +162,13 @@ void loop() {
       long totalTime = timeEnd - start;
       calcSpeed(totalTime);
       rset = false;
+      // Little delay to help avoid de-bouncing.
       delay(10);
       waitPulse = true;
     }
   }
   // Wait for the input to be high agin,
-  // otherwise, the display will update 
+  // otherwise, the display will update
   // before the pulse has a chanse to open
   // (HIGH).
   if (digitalRead(SPEED_IN)) {
