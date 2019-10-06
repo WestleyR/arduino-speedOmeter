@@ -1,9 +1,9 @@
 // Created by: WestleyK
 // Email: westleyk@nym.hush.com
-// Date: Sep 22, 2019
+// Date: Oct 5, 2019
 // Repo: https://github.com/WestleyR/arduino-speedOmeter
 //
-// Version: 1.0.0-beta-5
+// Version: 1.0.0-beta-8
 //
 // License: The Clear BSD License
 //
@@ -38,10 +38,12 @@ int BCD_B_OUTPUT[] = {13, 12, 11, 10};
 int BCD_C_OUTPUT[] = {9, 8, 7, 6};
 int BCD_A_OUTPUT[] = {5, 4, 3, 2};
 
+// The refresh rate for the display, in milliseconds.
+const unsigned long displayUpdateDelay = 500;
+
 // A couple of timer vars.
-bool rset = false;
-bool waitPulse = false;
-unsigned long start;
+unsigned long updateTimer = 0;
+bool updateReset = false;
 
 // This is the magic number, its the miles/per wheel
 // rotation (per/input pulse). Needs to be adgusted
@@ -78,12 +80,7 @@ void getBcdArray(int ret[], int num) {
   int rindex = 0;
   for (int c = 3; c >= 0; c--) {
     int b = num >> c;
-
-    if (b & 1) {
-      ret[rindex] = 1;
-    } else {
-      ret[rindex] = 0;
-    }
+    ret[rindex] = (b & 1) ? 1 : 0;
     rindex++;
   }
 }
@@ -144,36 +141,43 @@ void setup() {
     pinMode(BCD_B_OUTPUT[i], OUTPUT);
     pinMode(BCD_C_OUTPUT[i], OUTPUT);
   }
-  pinMode(SPEED_IN, INPUT);
+  pinMode(SPEED_IN, INPUT_PULLUP);
 }
 
 void calcSpeed(long double timePulse) {
-  float currentSpeed = (milesPerPulse / timePulse) * 36000;
+  float currentSpeed = (milesPerPulse / timePulse) * 3600000;
   writeAllOutput((int)currentSpeed);
 }
 
-unsigned long startTime;
-unsigned long endTime;
-unsigned long timerReset;
-bool timerRunning = false;
+// updateWheel will return the time in milliseconds
+// it takes for the wheel to rotate.
+double updateWheel() {
+  double wheelRotate = 0;
+  // Wait for the next cycle.
+  // TODO: dont stall the program here, needs a break
+  // after some time.
+  while (digitalRead(SPEED_IN));
+  unsigned long wheelTime = micros();
+  delay(2);
+  while (!digitalRead(SPEED_IN));
+  delay(2);
+  while (digitalRead(SPEED_IN));
+  delay(1);
+  wheelRotate = (micros() - wheelTime) / 1000;
+
+  return (wheelRotate);
+}
 
 void loop() {
-  if (!timerRunning && digitalRead(SPEED_IN)) {
-    startTime = millis();
-    timerRunning = true;
-    timerReset = millis();
-    delay(10);
-  }
-  if (timerRunning && !digitalRead(SPEED_IN)) {
-    endTime = millis();
-    timerRunning = false;
-    long double timeSpeed = (endTime - startTime) / (long double)1000;
-    calcSpeed(timeSpeed);
-    delay(200);
+  if (!updateReset) {
+    updateTimer = millis();
+    updateReset = true;
   }
 
-  if ((millis() - timerReset) > 2000) {
-    writeAllOutput(0);
-    timerReset = millis();
+  // Check if its time to update the display.
+  if ((millis() - updateTimer) >= displayUpdateDelay) {
+    double wheelSpeed = updateWheel();
+    calcSpeed(wheelSpeed);
+    updateReset = false;
   }
 }
