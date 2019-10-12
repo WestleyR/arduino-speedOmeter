@@ -3,7 +3,7 @@
 // Date: Oct 12, 2019
 // Repo: https://github.com/WestleyR/arduino-speedOmeter
 //
-// Version: 1.0.0-beta-14
+// Version: 1.0.0-beta-16
 //
 // License: The Clear BSD License
 //
@@ -48,6 +48,7 @@ unsigned long displayUpdateRate = 0;
 void setup() {
   // The pulse input.
   pinMode(SPEED_IN, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // Setup the lcd.
   lcd.init();
@@ -79,7 +80,9 @@ void updateLcd(float currentSpeed) {
 
   // Divide the currentMiles by 3.6e+6 to get total miles,
   // sinse currentMiles is in milliseconds.
-  lcd.print(currentMiles / 3600000);
+  // TODO: not sure why to *2 on pro-mini, not necessary
+  // on Arduino Mega...
+  lcd.print((currentMiles / 3600000) * 2);
 
   // Reset the update counter.
   displayUpdateRate = millis();
@@ -111,11 +114,13 @@ double updateWheel() {
   unsigned long wheelTime = micros();
   delay(2);
   breakTimerStart = millis();
+  pinMode(LED_BUILTIN, HIGH);
   while (!digitalRead(SPEED_IN)) {
     if (timerBreak(millis())) return (wheelRotate);
   }
   delay(2);
   breakTimerStart = millis();
+  pinMode(LED_BUILTIN, LOW);
   while (digitalRead(SPEED_IN)) {
     if (timerBreak(millis())) return (wheelRotate);
   }
